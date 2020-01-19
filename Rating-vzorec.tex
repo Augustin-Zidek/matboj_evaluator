@@ -1,0 +1,32 @@
+\documentclass[11pt]{article}
+\usepackage[cp1250]{inputenc}
+\usepackage[IL2]{fontenc}
+\usepackage[czech]{babel}
+\usepackage{a4wide} 
+\usepackage{amsmath,amsfonts,amssymb} 
+\thispagestyle{plain}
+
+\begin{document}
+\textbf{Vyhrávající:} \\
+
+\begin{huge}
+$\textit{Rating hráèe} + 100 - \frac{\textit{Rating hráèe} - \textit{Rating soupeøe}}{3}$
+\end{huge} \\\\
+
+\textbf{Prohrávající:} \\
+
+\begin{huge}
+$\textit{Rating hráèe} - 100 - \frac{\textit{Rating hráèe} - \textit{Rating soupeøe}}{3}$
+\end{huge} \\\\
+
+Napøíklad: David má rating 1000 a Barbora 1200, David zvítìzí:
+
+\textbf{Rating Davida:} $$1000 + 100 - \frac{1000 - 1200}{3} = 1100 + 66 = \textbf{1166}$$ 
+
+\textbf{Rating Barbory:} $$1200 - 100 - \frac{1200 - 1000}{3} = 1100 - 66 = \textbf{1034}$$ \\
+
+\begin{huge}
+Hráè \textbf{musí} pøijmout výzvu k høe jen od toho, kdo má rating alespoò: $$\textit{Rating hráèe} - 300$$
+\end{huge}
+
+\end{document} 
