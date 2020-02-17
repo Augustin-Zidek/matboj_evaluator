@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import readline
 
 
 class Person(object):
@@ -46,7 +47,7 @@ def print_list(lst, cols=3):
   lst.extend([''] * (-len(lst) % cols))
   num_rows = len(lst) // cols
   for elements in [lst[i::num_rows] for i in range(num_rows)]:
-    print('  |  '.join(elements))
+    print(' │ '.join(elements))
 
 
 def new_ranks(winner, loser):
@@ -82,8 +83,9 @@ class Matboj(object):
   def print_ranking(self):
     name_len = max(len(p.name) for p in self._people)
     print_list([
-        '%2d. %s: %4d' % (i + 1, p.name.ljust(name_len + 1), p.rank)
+        '%2d. %s: %4d' % (i + 1, p.name.ljust(name_len + 1).title(), p.rank)
         for i, p in enumerate(sorted(self._people, key=lambda e: -e.rank))])
+    print()
 
   def undo(self):
     if self._match_list:
@@ -116,7 +118,7 @@ class Matboj(object):
   def run(self):
     self.print_ranking()
 
-    print('Welcome to Matboj! Type "help" to display available commands.')
+    print('Welcome to Matboj! Type "help" to show available commands.')
     while True:
       print('\033[94m$\033[0m\033[92m ', end='')
       command = input().strip()
