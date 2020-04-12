@@ -3,7 +3,6 @@ import json
 import os
 import re
 import sys
-import readline
 
 
 class Person(object):
@@ -87,19 +86,40 @@ class Matboj(object):
         for i, p in enumerate(sorted(self._people, key=lambda e: -e.rank))])
     print()
 
-  def undo(self):
-    if self._match_list:
-      last_winner_name, last_loser_name = self._match_list[-1]
-      print('Undo %s:%s? [y/n] ' % (last_winner_name, last_loser_name), end='')
-      answer = input().strip()
-      if answer == 'y':
-        self._names_to_people[last_winner_name].undo()
-        self._names_to_people[last_loser_name].undo()
-        del self._match_list[-1]
-        print('Undo done for %s:%s' % (last_winner_name, last_loser_name))
-        self.print_ranking()
-    else:
+  def _undo_match(self, match):
+    self._names_to_people[match[0]].undo()
+    self._names_to_people[match[1]].undo()
+
+  def undo(self, position):
+    if not self._match_list:
       print('Nothing to undo.')
+      return
+
+    if position > len(self._match_list):
+      print('Not enough matches (%d) to undo position match at position -%d'
+            % (len(self._match_list), position))
+      return
+
+    undo_winner_name, undo_loser_name = self._match_list[-position]
+    print('Undo %s:%s? [y/n] ' % (undo_winner_name, undo_loser_name), end='')
+    answer = input().strip()
+    if answer == 'y':
+      # Undo all the matches up to the bad one, then redo them since somebody
+      # has maybe already played with the players whose match we are undoing.
+      redo_buffer = []
+      for _ in range(position - 1):
+        current_match = self._match_list.pop()
+        redo_buffer.append(current_match)
+        self._undo_match(current_match)
+      # Undo the actual bad match.
+      bad_match = self._match_list.pop()
+      self._undo_match(bad_match)
+      # Redo the matches.
+      for redo_match in redo_buffer:
+        self.rerank(*redo_match)
+      print('Undo done for %s:%s' % (undo_winner_name, undo_loser_name))
+      self.print_ranking()
+
 
   def rerank(self, name1, name2):
     if name1 in self._names_to_people and name2 in self._names_to_people:
@@ -110,7 +130,6 @@ class Matboj(object):
       winner.update_rank(new_winner_rank)
       loser.update_rank(new_loser_rank)
       self._match_list.append((winner.name, loser.name))
-      self.print_ranking()
       self.save_game_state()
     else:
       print('Unknown winner or loser name.')
@@ -127,7 +146,7 @@ class Matboj(object):
       if command == '':
         continue
       if command == 'about':
-        print('Writte by Augustin Zidek in 2020.')
+        print('Written by Augustin Zidek in 2020.')
       elif command in ['quit', 'exit']:
         self.save_game_state()
         exit()
@@ -143,13 +162,17 @@ class Matboj(object):
         print('Game state loaded.')
         self.print_ranking()
       elif command == 'help':
-        print('Commands: about, quit, print, matches, save, load, undo, '
+        print('Commands: about, quit, print, matches, save, load, undo [num], '
               '<winner name>:<loser name>')
       elif command == 'undo':
-        self.undo()
+        self.undo(position=1)
+      elif re.match('undo [0-9]+', command):
+        undo_position = int(re.match('undo ([0-9]+)', command).group(1))
+        self.undo(position=undo_position)
       elif re.match(r'\w+:\w+', command):
         name1, name2 = command.split(':')
         self.rerank(name1, name2)
+        self.print_ranking()
       else:
         print('Unknown command.')
 
