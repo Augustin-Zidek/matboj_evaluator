@@ -3,6 +3,10 @@
 Used at math camps like Pikomat or KMS for keeping score when all participants
 in the camp play a board game and need to compute individual ranks periodically.
 
+## See it in action
+
+![Usage demo](usage_demo.gif)
+
 ## Features
 
 * Print the current score or matches that have been played so far.
