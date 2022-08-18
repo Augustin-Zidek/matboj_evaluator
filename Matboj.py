@@ -84,11 +84,15 @@ class Matboj(object):
       self._names_to_people = {p.name: p for p in self._people}
       self._match_list = game_state['match_list']
 
-  def print_ranking(self):
+  def print_ranking(self, winner_name=None, loser_name=None):
     name_len = max(len(p.name) for p in self._people)
-    print_list([
-        '%2d. %s: %4d' % (i + 1, p.name.ljust(name_len + 1).title(), p.rank)
-        for i, p in enumerate(sorted(self._people, key=lambda e: -e.rank))])
+    to_print = []
+    for i, person in enumerate(sorted(self._people, key=lambda e: -e.rank), 1):
+      name = person.name.ljust(name_len + 1).title()
+      if person.name == winner_name or person.name == loser_name:
+        name = f'\033[93m{name}\033[0m'
+      to_print.append(f'{i:2d}. {name}: {person.rank:4.0f}')
+    print_list(to_print)
     print()
 
   def _undo_match(self, match):
@@ -102,8 +106,10 @@ class Matboj(object):
 
     if position > len(self._match_list):
       print_error(f'Not enough matches ({len(self._match_list)}) to undo '
-                  f'position match at position -{position}')
+                  f'position match at position {position}')
       return
+
+    position = len(self._match_list) - position + 1
 
     undo_winner_name, undo_loser_name = self._match_list[-position]
     answer = input(f'Undo {undo_winner_name}:{undo_loser_name}? [y/n] ').strip()
@@ -126,18 +132,13 @@ class Matboj(object):
 
 
   def rerank(self, winner_name, loser_name):
-    if winner_name not in self._names_to_people:
-      print_error(f'Unknown winner name: {winner_name.title()}.')
-    elif loser_name not in self._names_to_people:
-      print_error(f'Unknown loser name: {loser_name.title()}.')
-    else:
-      winner = self._names_to_people[winner_name.lower()]
-      loser = self._names_to_people[loser_name.lower()]
-      new_winner_rank, new_loser_rank = new_ranks(winner=winner, loser=loser)
-      winner.update_rank(new_winner_rank)
-      loser.update_rank(new_loser_rank)
-      self._match_list.append((winner.name, loser.name))
-      self.save_game_state()
+    winner = self._names_to_people[winner_name.lower()]
+    loser = self._names_to_people[loser_name.lower()]
+    new_winner_rank, new_loser_rank = new_ranks(winner=winner, loser=loser)
+    winner.update_rank(new_winner_rank)
+    loser.update_rank(new_loser_rank)
+    self._match_list.append((winner.name, loser.name))
+    self.save_game_state()
 
 
   def run(self):
@@ -158,8 +159,8 @@ class Matboj(object):
       elif command in ('status', 'print'):
         self.print_ranking()
       elif command == 'matches':
-        print(', '.join([f'{w}:{l} ({len(self._match_list) - n})'
-                         for n, (w, l) in enumerate(self._match_list)]))
+        print(', '.join([f'{w}:{l} ({n})'
+                         for n, (w, l) in enumerate(self._match_list, 1)]))
       elif command == 'save':
         self.save_game_state()
         print('Game state saved.')
@@ -171,7 +172,7 @@ class Matboj(object):
         print('Commands: about, quit, print, matches, save, load, undo [num], '
               '<winner name>:<loser name>')
       elif command == 'undo':
-        self.undo(position=1)
+        self.undo(position=len(self._match_list))
       elif re.match('undo [0-9]+', command):
         undo_position = int(re.match('undo ([0-9]+)', command).group(1))
         self.undo(position=undo_position)
@@ -180,8 +181,14 @@ class Matboj(object):
         if winner_name == loser_name:
           print_error('The two player names must be distinct.')
           continue
+        elif winner_name not in self._names_to_people:
+          print_error(f'Unknown winner name: {winner_name.title()}.')
+          continue
+        elif loser_name not in self._names_to_people:
+          print_error(f'Unknown loser name: {loser_name.title()}.')
+          continue
         self.rerank(winner_name=winner_name, loser_name=loser_name)
-        self.print_ranking()
+        self.print_ranking(winner_name=winner_name, loser_name=loser_name)
       else:
         print_error('Unknown command.')
 
